@@ -267,6 +267,7 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
                         MPI_Error_string(merr, errmsg, &msglen);
                         cout << "[Server-Error]: disconnect error: " << errmsg << endl;
                     }
+                    MPI_Barrier(comm_map[msg]);
                     comm_map.erase(msg);
 #ifdef DEBUG
                     cout << "[Server]: find MPI_Comm and wid, removing worker..." << endl;

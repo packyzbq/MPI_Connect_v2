@@ -8,7 +8,6 @@
 #include "mpi.h"
 #include "pthread.h"
 #include "IRecv_buffer.h"
-#include
 #include <iostream>
 
 using namespace std;
