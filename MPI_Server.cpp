@@ -55,22 +55,13 @@ int MPI_Server::initialize() {
 
     //start recv thread
     pthread_create(&recv_t ,NULL, MPI_Base::recv_thread, this);
-    while(true){
-        if(!recv_f) {
-            break;
-        }
-    }
+    while(recv_f);
     cout << "[Server]: receive thread start..." << endl;
 
     //start accept thread
     pthread_create(&pth_accept, NULL, MPI_Server::accept_conn_thread, this);
-    while(true){
-        if(!accept_f){
-            break;
-        }
-    }
     cout << "[Server]: accept thread start..." << endl;
-
+    while(accept_f);
     cout << "--------------------Server init finish--------------------" << endl;
     return MPI_ERR_CODE::SUCCESS;
 }

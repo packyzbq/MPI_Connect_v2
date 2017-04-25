@@ -31,7 +31,7 @@ public:
 
     ~MPI_Server();
 
-    void run();
+    //void run();
     int initialize();
     int stop();
     int finalize();
@@ -43,7 +43,7 @@ public:
     //int send_int(int buf, int msgsize, string dest_uuid, int tag);
     static void* accept_conn_thread(void* ptr);
 
-    bool disconnect_client(int w_uuid);
+    //bool disconnect_client(int w_uuid);
     //void bcast(void *buf, int msgsz, MPI_Datatype datatype, int tags);
 
     void set_accept_f_stop(){

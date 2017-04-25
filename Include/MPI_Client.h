@@ -15,7 +15,7 @@ public:
     ~MPI_Client();
 
     int initialize();
-    void run();
+    //void run();
     int stop();
     int finalize();
 
