@@ -37,15 +37,16 @@ void* MPI_Base::recv_thread(void *ptr) {
 
     MPI_Comm_rank(MPI_COMM_WORLD, &(((MPI_Base*)ptr)->myrank));
     MPI_Comm_size(MPI_COMM_WORLD, &(((MPI_Base*)ptr)->w_size));
-
-#ifdef DEBUG
-    cout <<"<recv thread>: Proc: "<< ((MPI_Base*)ptr)->myrank << ", Pid: " << pid << ", receive thread start...  "<<endl;
-#endif
-    pthread_mutex_lock(&(((MPI_Base*)ptr)->recv_flag_mutex));
+	
+	pthread_mutex_lock(&(((MPI_Base*)ptr)->recv_flag_mutex));
     ((MPI_Base*)ptr)->recv_f = false;
     bool recv_f_dup = ((MPI_Base*)ptr)->recv_f;
     pthread_mutex_unlock(&(((MPI_Base*)ptr)->recv_flag_mutex));
 
+#ifdef DEBUG
+    cout <<"<recv thread>: Proc: "<< ((MPI_Base*)ptr)->myrank << ", Pid: " << pid << ", receive thread start...  "<<endl;
+#endif
+    
     // TODO add exception handler -> OR add return code
     while(!recv_f_dup){
         if(((MPI_Base*)ptr)->new_msg_come(&args)){

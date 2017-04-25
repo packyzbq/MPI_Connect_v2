@@ -20,6 +20,7 @@ private:
 
     pthread_t pth_accept;
     pthread_mutex_t accept_flag_mutex;
+	pthread_mutex_t dummy_f_mutex;
     bool accept_f = true;       // true->stop; false->running
     bool allowstop = false;
     bool dummy_conn = false;    // flag for dummy connection has established

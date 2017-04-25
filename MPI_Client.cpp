@@ -49,7 +49,14 @@ int MPI_Client::initialize() {
     MPI_Barrier(sc_comm_);
 
     pthread_create(&recv_t, NULL, MPI_Base::recv_thread, this);
-    while(recv_f);
+    while(true){
+		pthread_mutex_lock(&recv_flag_mutex);
+		if(!recv_f){
+			pthread_mutex_unlock(&recv_flag_mutex);
+			break;
+		}
+		pthread_mutex_unlock(&recv_flag_mutex);
+	}
     cout << "[Client_"<< myrank <<"]: recv thread start...." << endl;
     cout << "--------------------Client "<< myrank <<" finish--------------------" << endl;
 

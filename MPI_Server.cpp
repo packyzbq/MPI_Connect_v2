@@ -14,6 +14,7 @@ MPI_Server::MPI_Server(IRecv_buffer* rh, char *svc_name) : MPI_Base(rh) {
     recv_flag_mutex = PTHREAD_MUTEX_INITIALIZER;
     accept_flag_mutex = PTHREAD_MUTEX_INITIALIZER;
     comm_list_mutex = PTHREAD_MUTEX_INITIALIZER;
+	dummy_f_mutex = PTHREAD_MUTEX_INITIALIZER;
 };
 
 MPI_Server::~MPI_Server() {
@@ -55,13 +56,27 @@ int MPI_Server::initialize() {
 
     //start recv thread
     pthread_create(&recv_t ,NULL, MPI_Base::recv_thread, this);
-    while(recv_f);
+    while(true){
+		pthread_mutex_lock(&recv_flag_mutex);
+		if(!recv_f){
+			pthread_mutex_unlock(&recv_flag_mutex);
+			break;
+		}
+		pthread_mutex_unlock(&recv_flag_mutex);
+	}
     cout << "[Server]: receive thread start..." << endl;
 
     //start accept thread
     pthread_create(&pth_accept, NULL, MPI_Server::accept_conn_thread, this);
+    while(true){
+		pthread_mutex_lock(&accept_flag_mutex);
+		if(!accept_f){
+			pthread_mutex_unlock(&accept_flag_mutex);
+			break;
+		}
+		pthread_mutex_unlock(&accept_flag_mutex);
+	}
     cout << "[Server]: accept thread start..." << endl;
-    while(accept_f);
     cout << "--------------------Server init finish--------------------" << endl;
     return MPI_ERR_CODE::SUCCESS;
 }
@@ -141,10 +156,24 @@ bool MPI_Server::new_msg_come(ARGS *args) {
     //FIXME Can not fairly detect the last-half queue
     if(comm_map.empty())
         return false;
+	int merr=0;
+	int msglen = 0;
+	char errmsg[MPI_MAX_ERROR_STRING];
     MPI_Status stat;
+	int flag;
     map<string, MPI_Comm>::iterator iter;
     for(iter = comm_map.begin(); iter != comm_map.end(); iter++){
-        if(Recv_Probe(iter->second,&stat)) {
+		if(iter->second == 0x0){
+			cout << "[Server-ERR]: Invalid communicator" << endl;
+			return false;
+		}
+		merr = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, iter->second, &flag, &stat);
+		if(merr){
+			MPI_Error_string(merr, errmsg, &msglen);
+			cout << "[Server-Error]: " << errmsg << endl;
+			//TODO Add error handle
+		}
+        if(flag) {
 #ifdef DEBUG
             cout << "[Server]: dectect a new msg <source=" << stat.MPI_SOURCE << ";tag=" << stat.MPI_TAG << ">" <<endl;
 #endif
@@ -179,14 +208,17 @@ void* MPI_Server::accept_conn_thread(void *ptr) {
             cout << "[Server-Error]: accept client error, msg: " << errmsg << endl;
         }
         MPI_Barrier(newcomm);
+		pthread_mutex_lock(&(((MPI_Server*)ptr)->dummy_f_mutex));
         if(((MPI_Server*)ptr)->dummy_conn){
             merr = MPI_Comm_disconnect(&newcomm);
             if(merr){
                 MPI_Error_string(merr, errmsg, &msglen);
                 cout << "[Server-ERR]: <accept-thread> Disconnect dummy connection error, msg: " << errmsg << endl;
             }
+			pthread_mutex_lock(&(((MPI_Server*)ptr)->dummy_f_mutex));
             break;
         }
+		pthread_mutex_unlock(&(((MPI_Server*)ptr)->dummy_f_mutex));
         pthread_mutex_lock(&(((MPI_Server*)ptr)->comm_list_mutex));
         ((MPI_Server*)ptr)->allowstop = true;
         while(((MPI_Server*)ptr)->comm_map[""+tmpkey] != NULL){
