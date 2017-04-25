@@ -39,7 +39,7 @@ void* MPI_Base::recv_thread(void *ptr) {
     MPI_Comm_size(MPI_COMM_WORLD, &(((MPI_Base*)ptr)->w_size));
 
 #ifdef DEBUG
-    cout <<"<recv thread>: Proc: "<< ((MPI_Base*)ptr)->myrank << ", Pid: " << pid.x << ", receive thread start...  "<<endl;
+    cout <<"<recv thread>: Proc: "<< ((MPI_Base*)ptr)->myrank << ", Pid: " << pid << ", receive thread start...  "<<endl;
 #endif
     pthread_mutex_lock(&(((MPI_Base*)ptr)->recv_flag_mutex));
     ((MPI_Base*)ptr)->recv_f = false;
@@ -123,8 +123,4 @@ void MPI_Base::set_recv_stop() {
     pthread_mutex_lock(&recv_flag_mutex);
     recv_f = true;
     pthread_mutex_unlock(&recv_flag_mutex);
-}
-
-void MPI_Base::set_send_stop() {
-    send_f = true;
 }

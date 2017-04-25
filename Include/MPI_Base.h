@@ -55,7 +55,6 @@ public:
     virtual bool new_msg_come(ARGS * args);
 
     void set_recv_stop();
-    void set_send_stop();
 
     virtual void recv_handle(ARGS args, void* buf){cout << "[Error] father recv handler" << endl;}; //
 
