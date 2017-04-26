@@ -117,18 +117,27 @@ int MPI_Server::finalize() {
     int msglen = 0;
     char errmsg[MPI_MAX_ERROR_STRING];
     MPI_Comm tmp_comm;
+	pthread_mutex_lock(&dummy_f_mutex);
     dummy_conn = true;
+	pthread_mutex_unlock(&dummy_f_mutex);
     merr = MPI_Comm_connect(port, MPI_INFO_NULL, 0, MPI_COMM_SELF, &tmp_comm);
     if(merr){
         MPI_Error_string(merr, errmsg, &msglen);
         cout << "[Server-ERR]: Setup dummy connection error, msg: " << errmsg << endl;
         return MPI_ERR_CODE::CONNECT_ERR;
     }
-    MPI_Barrier(tmp_comm);
-    MPI_Comm_disconnect(&tmp_comm);
+	cout << "tmp_comm = " << tmp_comm << endl;
+    //MPI_Barrier(tmp_comm);
+    //merr = MPI_Comm_disconnect(&tmp_comm);
+	//if(merr){
+	//	MPI_Error_string(merr, errmsg, &msglen);
+    //    cout << "[Server-ERR]: Disconnect dummy connection error, msg: " << errmsg << endl;
+    //    return MPI_ERR_CODE::DISCONN_ERR;
+	//}
 #ifdef DEBUG
     cout << "[Server]: Disconnect dummy connection, wait for accept thread stop" << endl;
 #endif
+	//MPI_Barrier(tmp_comm);
     int ret;
     ret = pthread_join(pth_accept, NULL);
 #ifdef DEBUG
@@ -164,7 +173,7 @@ bool MPI_Server::new_msg_come(ARGS *args) {
     map<string, MPI_Comm>::iterator iter;
     for(iter = comm_map.begin(); iter != comm_map.end(); iter++){
 		if(iter->second == 0x0){
-			cout << "[Server-ERR]: Invalid communicator" << endl;
+			//cout << "[Server-ERR]: Invalid communicator" << endl;
 			return false;
 		}
 		merr = MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, iter->second, &flag, &stat);
@@ -207,15 +216,21 @@ void* MPI_Server::accept_conn_thread(void *ptr) {
             MPI_Error_string(merr, errmsg, &msglen);
             cout << "[Server-Error]: accept client error, msg: " << errmsg << endl;
         }
-        MPI_Barrier(newcomm);
+		#ifdef DEBUG
+		cout << "[Server]: Add a new communicator=" << newcomm << endl;
+		#endif
+        //MPI_Barrier(newcomm);
 		pthread_mutex_lock(&(((MPI_Server*)ptr)->dummy_f_mutex));
         if(((MPI_Server*)ptr)->dummy_conn){
-            merr = MPI_Comm_disconnect(&newcomm);
-            if(merr){
-                MPI_Error_string(merr, errmsg, &msglen);
-                cout << "[Server-ERR]: <accept-thread> Disconnect dummy connection error, msg: " << errmsg << endl;
-            }
-			pthread_mutex_lock(&(((MPI_Server*)ptr)->dummy_f_mutex));
+		#ifdef DEBUG
+		cout << "[Server]: Accept a dummy connection, ready to stop" << endl;
+		#endif
+            //merr = MPI_Comm_disconnect(&newcomm);
+            //if(merr){
+            //    MPI_Error_string(merr, errmsg, &msglen);
+            //    cout << "[Server-ERR]: <accept-thread> Disconnect dummy connection error, msg: " << errmsg << endl;
+            //}
+			pthread_mutex_unlock(&(((MPI_Server*)ptr)->dummy_f_mutex));
             break;
         }
 		pthread_mutex_unlock(&(((MPI_Server*)ptr)->dummy_f_mutex));
@@ -224,8 +239,10 @@ void* MPI_Server::accept_conn_thread(void *ptr) {
         while(((MPI_Server*)ptr)->comm_map[""+tmpkey] != NULL){
             tmpkey++;
         }
-        ((MPI_Server*)ptr)->comm_map.insert(pair<string, MPI_Comm>(""+tmpkey,newcomm));
-        tmpkey++;
+        //((MPI_Server*)ptr)->comm_map.insert(pair<string, MPI_Comm>(""+tmpkey,newcomm));
+		((MPI_Server*)ptr)->comm_map[""+tmpkey] = newcomm;
+		cout << "comm = " << newcomm << endl;
+		tmpkey++;
         pthread_mutex_unlock(&(((MPI_Server*)ptr)->comm_list_mutex));
         //TODO receive worker MPI_REGISTEY tags and add to master, in recv_thread() function or ABC recv_commit() function
 #ifdef DEBUG
@@ -268,13 +285,14 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
 #endif
                     break;
                 }
+				else if(comm_map[msg] != NULL){
+               	cout << "[Server-ERROR]: This uuid=" << msg << "has already registered" << endl;
+            	}
+
             }
             if(iter == comm_map.end()){
                 cout << "[Server-Error]: register error, no compatible MPI_COMM" << endl;
                 //TODO Add error handle
-            }
-            else if(comm_map[msg] != NULL){
-                cout << "[Server-ERROR]: This uuid=" << msg << "has already registered" << endl;
             }
             pthread_mutex_unlock(&comm_list_mutex);
         }

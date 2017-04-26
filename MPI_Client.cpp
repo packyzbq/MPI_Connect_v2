@@ -46,7 +46,7 @@ int MPI_Client::initialize() {
         //TODO Add error handle
     }
     cout << "[Client_"<< myrank <<"]: client connect to server, comm = " << sc_comm_ << endl;
-    MPI_Barrier(sc_comm_);
+    //MPI_Barrier(sc_comm_);
 
     pthread_create(&recv_t, NULL, MPI_Base::recv_thread, this);
     while(true){
@@ -75,7 +75,7 @@ int MPI_Client::stop() {
     char* tmp = (char *) uuid_.data();
     if(send_string(tmp, strlen(tmp), 0, MPI_DISCONNECT) == MPI_ERR_CODE::SUCCESS)
         cout <<"[Client_"<< myrank <<"]: send complete..." << endl;
-    MPI_Barrier(sc_comm_);
+    //MPI_Barrier(sc_comm_);
     merr = MPI_Comm_disconnect(&sc_comm_);
     if(merr){
         MPI_Error_string(merr, errmsg, &msglen);
@@ -144,9 +144,12 @@ int MPI_Client::send_string(char* buf, int msgsize, int dest, int tag){
         return MPI_ERR_CODE::SEND_FAIL;
     }
 #ifdef DEBUG
-    cout << "[Client_"<< myrank <<"]: start barrier..." << endl;
+    cout << "[Client_"<< myrank <<"]: start send barrier..." << endl;
 #endif
     merr = MPI_Barrier(sc_comm_);
+#ifdef DEBUG
+	cout << "[Client_"<< myrank <<"]: end start  barrier..." << endl;	
+#endif
     if(merr){
         MPI_Error_string(merr, errmsg, &msglen);
         cout << "[Client-Error]: barrier fail...error: " << errmsg << endl;
