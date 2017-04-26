@@ -352,6 +352,7 @@ int MPI_Server::send_string(char *buf, int msgsize, string dest_uuid, int tag) {
         cout << "[Server-Error]: can't find send comm" << endl;
 #endif
         //TODO add error handler
+		return MPI_ERR_CODE::SEND_FAIL;
     }
     merr = MPI_Send(buf, msgsize, MPI_CHAR, 0, tag, send_comm);
     if(merr){
