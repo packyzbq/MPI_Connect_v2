@@ -8,11 +8,11 @@
 using namespace boost::python;
 
 BOOST_PYTHON_MODULE(IR_Buffer_Module){
-        class_<Pack>("Pack")
-                .def_readonly("tag", &Pack::tag)
-                .def_readonly("ibuf", &Pack::ibuf)
-                .def_readonly("sbuf", &Pack::sbuf)
-                .def_readonly("size", &Pack::size)
+        class_<Pack>("Pack", init<int, int>())
+                .def_readonly("tag", &Pack::tag_)
+                .def_readonly("ibuf", &Pack::ibuf_)
+                .def_readonly("sbuf", &Pack::sbuf_)
+                .def_readonly("size", &Pack::size_)
         ;
 
         class_<IRecv_buffer>("IRecv_buffer")

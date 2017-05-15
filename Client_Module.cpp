@@ -4,6 +4,8 @@
 
 #include <boost/python.hpp>
 #include "MPI_Client.cpp"
+#include "MPI_Base.cpp"
+#include "Include/IRecv_buffer.h"
 
 using namespace boost::python;
 

@@ -209,8 +209,9 @@ void* MPI_Server::accept_conn_thread(void *ptr) {
     pthread_mutex_unlock(&(((MPI_Server*)ptr)->accept_flag_mutex));
     cout << "[Server] host: "<< ((MPI_Server*)ptr)->hostname <<", accept connection thread start..." << endl;
     int tmpkey = 0;
+	MPI_Comm newcomm;
     while(!((MPI_Server*)ptr)->accept_f) {
-        MPI_Comm newcomm;
+        //MPI_Comm newcomm;
         merr = MPI_Comm_accept(((MPI_Server*)ptr)->port, MPI_INFO_NULL, 0, MPI_COMM_SELF, &newcomm);
         if(merr){
             MPI_Error_string(merr, errmsg, &msglen);
@@ -354,6 +355,7 @@ int MPI_Server::send_string(char *buf, int msgsize, string dest_uuid, int tag) {
         cout << "[Server-Error]: can't find send comm" << endl;
 #endif
         //TODO add error handler
+		return MPI_ERR_CODE::SEND_FAIL;
     }
     merr = MPI_Send(buf, msgsize, MPI_CHAR, 0, tag, send_comm);
     if(merr){
