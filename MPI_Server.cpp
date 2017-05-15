@@ -276,17 +276,19 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
             int size = 0;
             pthread_mutex_lock(&comm_list_mutex);
             //modify comm_map
+            size_t pos = msg.find("\"uuid\":");
+            string uuid = msg.substr(pos+6,36);
             for(iter = comm_map.begin(); iter != comm_map.end(); iter++){
-                if(iter->second == args.newcomm && comm_map[msg] == NULL) {
-                    comm_map[msg] = iter->second;
+                if(iter->second == args.newcomm && comm_map[uuid] == NULL) {
+                    comm_map[uuid] = iter->second;
                     comm_map.erase(iter->first);
 #ifdef DEBUG
-                    cout << "[Server]: register worker " << msg << " success" << endl;
+                    cout << "[Server]: register worker " << uuid << " success" << endl;
 #endif
                     break;
                 }
-				else if(comm_map[msg] != NULL){
-               	cout << "[Server-ERROR]: This uuid=" << msg << "has already registered" << endl;
+				else if(comm_map[uuid] != NULL){
+               	cout << "[Server-ERROR]: This uuid=" << uuid << "has already registered" << endl;
             	}
 
             }
@@ -298,18 +300,19 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
         }
             break;
         case MPI_DISCONNECT:{
-
-            cout << "[Server] worker :" << msg<< " require disconnect" << endl;
+            size_t pos = msg.find("\"uuid\":");
+            string uuid = msg.substr(pos+6,36);
+            cout << "[Server] worker :" << uuid<< " require disconnect" << endl;
             pthread_mutex_lock(&comm_list_mutex);
-            if(comm_map[msg] != NULL){
-                if(comm_map[msg] == args.newcomm) {
-                    merr = MPI_Comm_disconnect(&comm_map[msg]);
+            if(comm_map[uuid] != NULL){
+                if(comm_map[uuid] == args.newcomm) {
+                    merr = MPI_Comm_disconnect(&comm_map[uuid]);
                     if (merr) {
                         MPI_Error_string(merr, errmsg, &msglen);
                         cout << "[Server-Error]: disconnect error: " << errmsg << endl;
                     }
-                    MPI_Barrier(comm_map[msg]);
-                    comm_map.erase(msg);
+                    MPI_Barrier(comm_map[uuid]);
+                    comm_map.erase(uuid);
 #ifdef DEBUG
                     cout << "[Server]: find MPI_Comm and wid, removing worker..." << endl;
 #endif
