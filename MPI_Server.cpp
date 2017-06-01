@@ -242,7 +242,7 @@ void* MPI_Server::accept_conn_thread(void *ptr) {
         }
         //((MPI_Server*)ptr)->comm_map.insert(pair<string, MPI_Comm>(""+tmpkey,newcomm));
 		((MPI_Server*)ptr)->comm_map[""+tmpkey] = newcomm;
-		cout << "comm = " << newcomm << endl;
+		//cout << "comm = " << newcomm << endl;
 		tmpkey++;
         pthread_mutex_unlock(&(((MPI_Server*)ptr)->comm_list_mutex));
         //TODO receive worker MPI_REGISTEY tags and add to master, in recv_thread() function or ABC recv_commit() function
@@ -278,7 +278,7 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
             pthread_mutex_lock(&comm_list_mutex);
             //modify comm_map
             size_t pos = msg.find("\"uuid\":");
-            string uuid = msg.substr(pos+6,36);
+            string uuid = msg.substr(pos+7,36);
             for(iter = comm_map.begin(); iter != comm_map.end(); iter++){
                 if(iter->second == args.newcomm && comm_map[uuid] == NULL) {
                     comm_map[uuid] = iter->second;
