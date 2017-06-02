@@ -278,7 +278,7 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
             pthread_mutex_lock(&comm_list_mutex);
             //modify comm_map
             size_t pos = msg.find("\"uuid\":");
-            string uuid = msg.substr(pos+7,36);
+            string uuid = msg.substr(pos+9,36);
             for(iter = comm_map.begin(); iter != comm_map.end(); iter++){
                 if(iter->second == args.newcomm && comm_map[uuid] == NULL) {
                     comm_map[uuid] = iter->second;
