@@ -103,6 +103,9 @@ void* MPI_Base::recv_thread(void *ptr) {
 #endif
             }
             ((MPI_Base*)ptr)->rv_buf->put(p);
+#ifdef DEBUG
+			cout << "<Rank "<<((MPI_Base*)ptr)->myrank <<" recv thread>: put pack into buffer" << endl;
+#endif
         }
         if(!rb)
             delete(rb);

@@ -31,6 +31,10 @@ struct IRecv_buffer{
         mutex = PTHREAD_MUTEX_INITIALIZER;
     };
 
+	int size(){
+		return buffer.size();
+	}
+
     void put(Pack p){
         pthread_mutex_lock(&mutex);
         buffer.push(p);

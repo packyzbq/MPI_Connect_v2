@@ -19,5 +19,6 @@ BOOST_PYTHON_MODULE(IR_Buffer_Module){
             .def("get", &IRecv_buffer::get)
             .def("put", &IRecv_buffer::put)
             .def("empty", &IRecv_buffer::empty)
+			.def("size", &IRecv_buffer::size)
         ;
 }

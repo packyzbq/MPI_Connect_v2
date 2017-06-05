@@ -278,7 +278,11 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
             pthread_mutex_lock(&comm_list_mutex);
             //modify comm_map
             size_t pos = msg.find("\"uuid\":");
-            string uuid = msg.substr(pos+9,36);
+			string uuid = "";
+			if(pos != -1)
+            	uuid = msg.substr(pos+9,36);
+			else
+			    uuid = msg;
             for(iter = comm_map.begin(); iter != comm_map.end(); iter++){
                 if(iter->second == args.newcomm && comm_map[uuid] == NULL) {
                     comm_map[uuid] = iter->second;
@@ -302,7 +306,11 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
             break;
         case MPI_DISCONNECT:{
             size_t pos = msg.find("\"uuid\":");
-            string uuid = msg.substr(pos+6,36);
+			string uuid = "";
+			if(pos != -1)
+            	uuid = msg.substr(pos+9,36);
+			else
+			    uuid = msg;
             cout << "[Server] worker :" << uuid<< " require disconnect" << endl;
             pthread_mutex_lock(&comm_list_mutex);
             if(comm_map[uuid] != NULL){
