@@ -2,7 +2,7 @@
 // Created by zhaobq on 2017-4-24.
 //
 
-#define DEBUG
+//#define DEBUG
 
 #include <pthread.h>
 #include "Include/MPI_Base.h"

@@ -5,7 +5,7 @@
 #include "Include/MPI_Client.h"
 #include <string.h>
 
-#define DEBUG
+//#define DEBUG
 
 MPI_Client::MPI_Client(IRecv_buffer *mh, char *svc_name, char *uuid):MPI_Base(mh),svc_name_(svc_name),uuid_(uuid) {
     recv_flag_mutex = PTHREAD_MUTEX_INITIALIZER;
