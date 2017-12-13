@@ -11,7 +11,7 @@ BOOST_PYTHON_MODULE(IR_Buffer_Module){
         class_<Pack>("Pack", init<int, int>())
                 .def_readonly("tag", &Pack::tag_)
                 .def_readonly("ibuf", &Pack::ibuf_)
-                .def_readonly("sbuf", &Pack::sbuf_)
+                .def_readwrite("sbuf", &Pack::sbuf_)
                 .def_readonly("size", &Pack::size_)
         ;
 
