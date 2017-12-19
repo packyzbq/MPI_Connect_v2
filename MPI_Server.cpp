@@ -37,6 +37,7 @@ int MPI_Server::initialize() {
     MPI_Get_processor_name(hostname, &msglen);
     //TODO set self costume handler, here set MPI_ERRORS_RETURN in temp
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    MPI_Comm_create_errhandler(MPI_Server::errhandler, &eh);
     cout << "[Server]: Host: " << hostname << ",Proc: "<< myrank << ", Server initialize..." << endl;
     merr = MPI_Open_port(MPI_INFO_NULL, port);
     if(merr){
@@ -158,6 +159,7 @@ int MPI_Server::finalize() {
         //TODO Do something
         return MPI_ERR_CODE::JOIN_THREAD_ERROR;
     }
+    MPI_Errhandler_free(&eh);
     MPI_Finalize();
     return MPI_ERR_CODE::SUCCESS;
 }
@@ -246,6 +248,9 @@ void* MPI_Server::accept_conn_thread(void *ptr) {
 		//cout << "comm = " << newcomm << endl;
 		tmpkey++;
         pthread_mutex_unlock(&(((MPI_Server*)ptr)->comm_list_mutex));
+        //add comm errhandler
+        MPI_Comm_set_errhandler(newcomm,&eh);
+
         //TODO receive worker MPI_REGISTEY tags and add to master, in recv_thread() function or ABC recv_commit() function
 #ifdef DEBUG
         cout << "[Server]:Host: " << ((MPI_Server*)ptr)->hostname << ", Proc: "<< ((MPI_Server*)ptr)->myrank << ", receive new connection...; MPI_COMM="<< newcomm << endl;
@@ -385,10 +390,10 @@ int MPI_Server::send_string(char *buf, int msgsize, string dest_uuid, int tag) {
 void MPI_Server::errhandler(MPI_Comm *comm, int *errcode, ...) {
     int reslen;
     char errstr[MPI_MAX_ERROR_STRING];
-    if(*err != MPI_ERR_OTHER) {
-        MPI_Error_string(*err, errstr, &reslen);
+    if(*errcode != MPI_ERR_OTHER) {
+        MPI_Error_string(*errcode, errstr, &reslen);
         Pack pack = Pack(-1, 0);
-        st = "";
+        string st = "";
         for(map<string, MPI_Comm>::iterator i = comm_map.begin(); i != comm_map.end();i++){
             if(i->second == *comm) {
                 st += i->first;

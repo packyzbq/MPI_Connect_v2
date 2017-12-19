@@ -27,7 +27,7 @@ int MPI_Client::initialize() {
     MPI_Init_thread(0,0, MPI_THREAD_MULTIPLE, &provide);
     cout << "[Client_"<< myrank <<"]: support thread level= " << provide << endl;
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
-    MPI_Comm_create_errhandler(handlerfunc_client, &eh);
+    MPI_Comm_create_errhandler(MPI_Client::errhandler, &eh);
 
     cout << "[Client_"<< myrank <<"]: finding service name <" << svc_name_ << "> ..." <<endl;
     merr = MPI_Lookup_name(svc_name_, MPI_INFO_NULL, portname);
@@ -196,8 +196,8 @@ void MPI_Client::recv_handle(ARGS args, void *buf) {
 void MPI_Client::errhandler(MPI_Comm *comm, int *errcode,...) {
     int reslen;
     char errstr[MPI_MAX_ERROR_STRING];
-    if(*err != MPI_ERR_OTHER) {
-        MPI_Error_string(*err, errstr, &reslen);
+    if(*errcode != MPI_ERR_OTHER) {
+        MPI_Error_string(*errcode, errstr, &reslen);
         Pack pack = Pack(-1, 0);
         pack.sbuf_ = errstr;
         rv_buf->put(pack);
