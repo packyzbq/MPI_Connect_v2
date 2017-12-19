@@ -27,6 +27,7 @@ int MPI_Client::initialize() {
     MPI_Init_thread(0,0, MPI_THREAD_MULTIPLE, &provide);
     cout << "[Client_"<< myrank <<"]: support thread level= " << provide << endl;
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    MPI_Comm_create_errhandler(handlerfunc_client, &eh);
 
     cout << "[Client_"<< myrank <<"]: finding service name <" << svc_name_ << "> ..." <<endl;
     merr = MPI_Lookup_name(svc_name_, MPI_INFO_NULL, portname);
@@ -47,6 +48,10 @@ int MPI_Client::initialize() {
     }
     cout << "[Client_"<< myrank <<"]: client connect to server, comm = " << sc_comm_ << endl;
     //MPI_Barrier(sc_comm_);
+
+    //set error handler
+    cout << "[Client_"<< myrank <<"]: client set error handler"<< endl;
+    MPI_Comm_set_errhandler(sc_comm_,eh);
 
     pthread_create(&recv_t, NULL, MPI_Base::recv_thread, this);
     while(true){
@@ -92,6 +97,7 @@ int MPI_Client::stop() {
 int MPI_Client::finalize() {
     int ret;
     ret = pthread_join(recv_t, NULL);
+    MPI_Errhandler_free(&eh);
     cout <<"[Client_"<< myrank <<"]: recv thread stop, exit code=" << ret << endl;
     MPI_Finalize();
     return 0;
@@ -182,7 +188,18 @@ void MPI_Client::recv_handle(ARGS args, void *buf) {
         }
             break;
         default:
-            cout << "[Client-Error]: Unrecognized type" << endl;
+            //cout << "[Client-Error]: Unrecognized type" << endl;
             break;
+    }
+}
+
+void MPI_Client::errhandler(MPI_Comm *comm, int *errcode,...) {
+    int reslen;
+    char errstr[MPI_MAX_ERROR_STRING];
+    if(*err != MPI_ERR_OTHER) {
+        MPI_Error_string(*err, errstr, &reslen);
+        Pack pack = Pack(-1, 0);
+        pack.sbuf_ = errstr;
+        rv_buf->put(pack);
     }
 }

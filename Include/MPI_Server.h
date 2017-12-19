@@ -41,6 +41,7 @@ public:
     void recv_handle(ARGS args, void* buf);
 
     int send_string(char *buf, int msgsize, string dest_uuid, int tag);
+    void errhandler(MPI_Comm *comm, int* errcode,...);
     //int send_int(int buf, int msgsize, string dest_uuid, int tag);
     static void* accept_conn_thread(void* ptr);
 

@@ -27,6 +27,7 @@ bool MPI_Base::Recv_Probe(MPI_Comm comm, MPI_Status *stat) {
 
 void* MPI_Base::recv_thread(void *ptr) {
     int msgsz, merr, msglen;
+    double starttime, endtime;
     void *rb = NULL;
     char errmsg[MPI_MAX_ERROR_STRING];
 
@@ -66,7 +67,9 @@ void* MPI_Base::recv_thread(void *ptr) {
                     rb = new char[msgsz];
                     break;
             }
+            starttime = MPI_Wtime();
             merr = MPI_Recv(rb, msgsz, args.datatype, args.arg_stat.MPI_SOURCE, args.arg_stat.MPI_TAG, args.newcomm, &recv_st);
+            endtime = MPI_Wtime();
             if(merr){
                 MPI_Error_string(merr, errmsg, &msglen);
                 cout << "<Rank "<<((MPI_Base*)ptr)->myrank <<"recv thread>: receive error: " << errmsg << endl;

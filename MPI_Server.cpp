@@ -4,6 +4,7 @@
 
 #include "Include/MPI_Server.h"
 #include "Include/ErrorHandler.h"
+#include "map"
 #include <string>
 #include <signal.h>
 
@@ -336,13 +337,14 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
         }
             break;
         default: {
-            cout << "[Server-Error]: unrecorgnized type" << endl;
+            //cout << "[Server-Error]: unrecorgnized type" << endl;
             break;
         }
     }
 }
 
 int MPI_Server::send_string(char *buf, int msgsize, string dest_uuid, int tag) {
+    double starttime,endtime;
 #ifdef DEBUG
     cout << "[Server]: send message...<" << buf << ",msgsize="<< msgsize <<",dest="<<dest_uuid <<",tag=" <<tag  << ">"<< endl;
 #endif
@@ -357,7 +359,9 @@ int MPI_Server::send_string(char *buf, int msgsize, string dest_uuid, int tag) {
         //TODO add error handler
 		return MPI_ERR_CODE::SEND_FAIL;
     }
+    starttime = MPI_Wtime();
     merr = MPI_Send(buf, msgsize, MPI_CHAR, 0, tag, send_comm);
+    endtime = MPI_Wtime();
     if(merr){
         MPI_Error_string(merr, errmsg, &msglen);
         cout << "[Server-Error]: send fail...error: " << errmsg << endl;
@@ -376,4 +380,23 @@ int MPI_Server::send_string(char *buf, int msgsize, string dest_uuid, int tag) {
     cout << "[Server]: end barrier..." << endl;
 #endif
     return MPI_ERR_CODE::SUCCESS;
+}
+
+void MPI_Server::errhandler(MPI_Comm *comm, int *errcode, ...) {
+    int reslen;
+    char errstr[MPI_MAX_ERROR_STRING];
+    if(*err != MPI_ERR_OTHER) {
+        MPI_Error_string(*err, errstr, &reslen);
+        Pack pack = Pack(-1, 0);
+        st = "";
+        for(map<string, MPI_Comm>::iterator i = comm_map.begin(); i != comm_map.end();i++){
+            if(i->second == *comm) {
+                st += i->first;
+                break;
+            }
+        }
+        st =st+ " "+ errstr;
+        pack.sbuf_=st;
+        rv_buf->put(pack);
+    }
 }

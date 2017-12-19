@@ -24,12 +24,14 @@ public:
 //    int send_int(int buf, int msgsize, int dest, int tag);
     int send_string(char* buf, int msgsize, int dest, int tag);
     void recv_handle(ARGS args,void* buf);
+    void errhandler(MPI_Comm *comm, int* errcode,...);
 
 private:
     char* svc_name_;
     char portname[MPI_MAX_PORT_NAME];
 
     MPI_Comm sc_comm_;
+    MPI_Errhandler eh;
     string uuid_= "";
 };
 
