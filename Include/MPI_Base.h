@@ -19,7 +19,7 @@ struct ARGS{    //用于 new_msg_come 向 recv传递参数
     MPI_Status arg_stat;
 
     void print(){
-        cout << "<args_info>: newcomm=" << newcomm << "; source=" << source_rank << "; datatype=" << datatype << "; status:{" << arg_stat.MPI_TAG << ";" <<arg_stat.count << "}" << endl;
+        cout << "<args_info>: newcomm=" << newcomm << "; source=" << source_rank << "; datatype=" << datatype << "; status:{" << arg_stat.MPI_TAG << ";" <<arg_stat.count_lo << "}" << endl;
     }
 };
 

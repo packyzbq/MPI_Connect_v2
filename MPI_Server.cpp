@@ -270,7 +270,7 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
     args.print();
 #endif
     string msg_tmp = (char *)buf;
-    string msg = msg_tmp.substr(0, (unsigned int) args.arg_stat.count);
+    string msg = msg_tmp.substr(0, (unsigned int) args.arg_stat.count_lo);
     char errmsg[MPI_MAX_ERROR_STRING];
     map<string, MPI_Comm>::iterator iter;
     switch(args.arg_stat.MPI_TAG){
