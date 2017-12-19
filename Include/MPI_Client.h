@@ -30,6 +30,8 @@ private:
     char* svc_name_;
     char portname[MPI_MAX_PORT_NAME];
 
+	MPI_Errhandler eh;
+
     MPI_Comm sc_comm_;
     string uuid_= "";
 };

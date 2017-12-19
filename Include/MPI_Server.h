@@ -18,6 +18,8 @@ private:
     pthread_mutex_t comm_list_mutex;
     char port[MPI_MAX_PORT_NAME];
 
+	MPI_Errhandler eh;
+
     pthread_t pth_accept;
     pthread_mutex_t accept_flag_mutex;
 	pthread_mutex_t dummy_f_mutex;

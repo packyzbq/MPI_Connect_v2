@@ -27,7 +27,6 @@ class MPI_Base{
 protected:
     IRecv_buffer* rv_buf;
     pthread_t recv_t;
-    MPI_Errhandler eh;
 
     int myrank;
     int w_size;

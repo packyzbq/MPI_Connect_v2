@@ -249,7 +249,7 @@ void* MPI_Server::accept_conn_thread(void *ptr) {
 		tmpkey++;
         pthread_mutex_unlock(&(((MPI_Server*)ptr)->comm_list_mutex));
         //add comm errhandler
-        MPI_Comm_set_errhandler(newcomm,&eh);
+        MPI_Comm_set_errhandler(newcomm,(MPI_Errhandler)&eh);
 
         //TODO receive worker MPI_REGISTEY tags and add to master, in recv_thread() function or ABC recv_commit() function
 #ifdef DEBUG
