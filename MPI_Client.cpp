@@ -182,7 +182,7 @@ void MPI_Client::recv_handle(ARGS args, void *buf) {
         }
             break;
         default:
-            cout << "[Client-Error]: Unrecognized type" << endl;
+            //cout << "[Client-Error]: Unrecognized type" << endl;
             break;
     }
 }
