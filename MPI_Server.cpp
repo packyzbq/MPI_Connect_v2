@@ -99,7 +99,9 @@ int MPI_Server::stop() {
 
     if(!comm_map.empty()){
         cout <<"[Server]: client still working ,cannot stop server..." << endl;
-        return MPI_ERR_CODE::STOP_ERR;
+		cout << "[Server]: Running client:" << endl;
+		print_Commlist();
+        //return MPI_ERR_CODE::STOP_ERR;
     }
     // TODO Add force stop
     //stop threads
@@ -283,8 +285,12 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
             int size = 0;
             pthread_mutex_lock(&comm_list_mutex);
             //modify comm_map
-            size_t pos = msg.find("\"uuid\":");
-            string uuid = msg.substr(pos+9,36);
+			size_t pos = msg.find("\"uuid\":");
+			string uuid = "";
+			if(pos != -1)
+            	uuid = msg.substr(pos+9,36);
+			else
+				uuid = msg;
             for(iter = comm_map.begin(); iter != comm_map.end(); iter++){
                 if(iter->second == args.newcomm && comm_map[uuid] == NULL) {
                     comm_map[uuid] = iter->second;
@@ -308,7 +314,11 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
             break;
         case MPI_DISCONNECT:{
             size_t pos = msg.find("\"uuid\":");
-            string uuid = msg.substr(pos+6,36);
+			string uuid = "";
+			if(pos != -1)
+            	uuid = msg.substr(pos+9,36);
+			else
+				uuid = msg;
             cout << "[Server] worker :" << uuid<< " require disconnect" << endl;
             pthread_mutex_lock(&comm_list_mutex);
             if(comm_map[uuid] != NULL){
