@@ -22,23 +22,37 @@ int MPI_Client::initialize() {
     int merr= 0;
     int msglen = 0;
     char errmsg[MPI_MAX_ERROR_STRING];
+    bool port_f = false;
 
     int provide;
     MPI_Init_thread(0,0, MPI_THREAD_MULTIPLE, &provide);
     cout << "[Client_"<< myrank <<"]: support thread level= " << provide << endl;
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
-    MPI_Comm_create_errhandler(MPI_Client::errhandler, &eh);
+    //MPI_Comm_create_errhandler(MPI_Client::errhandler, &eh);
 
-    cout << "[Client_"<< myrank <<"]: finding service name <" << svc_name_ << "> ..." <<endl;
-    merr = MPI_Lookup_name(svc_name_, MPI_INFO_NULL, portname);
-    if(merr){
-        MPI_Error_string(merr, errmsg, &msglen);
-        cout << "[Client-"<<myrank<<"-error]: Lookup service name error, msg: "<< errmsg << endl;
-        return MPI_ERR_CODE::LOOKUP_SVC_ERR;
-        //TODO Add error handle
+    while(!port_f) {
+        cout << "[Client_" << myrank << "]: finding service name <" << svc_name_ << "> ..." << endl;
+        merr = MPI_Lookup_name(svc_name_, MPI_INFO_NULL, portname);
+        if (merr) {
+            MPI_Error_string(merr, errmsg, &msglen);
+            cout << "[Client-" << myrank << "-error]: Lookup service name error, msg: " << errmsg << endl;
+            return MPI_ERR_CODE::LOOKUP_SVC_ERR;
+            //TODO Add error handle
+        }
+
+        cout << "[Client_" << myrank << "]: service found on port:<" << portname << ">" << endl;
+        // check port is in right format
+        int port_len = strlen(portname);
+        while(portname[port_len-1] != '$'){
+            portname[port_len-1] = '\0';
+            port_len-=1;
+        }
+        if (port_len < 24)
+            continue;
+        else
+            port_f = true;
     }
 
-    cout << "[Client_"<< myrank <<"]: service found on port:<" << portname << ">" << endl;
     merr = MPI_Comm_connect(portname, MPI_INFO_NULL,0, MPI_COMM_SELF, &sc_comm_);
     if(merr){
         MPI_Error_string(merr, errmsg, &msglen);
@@ -50,8 +64,8 @@ int MPI_Client::initialize() {
     //MPI_Barrier(sc_comm_);
 
     //set error handler
-    cout << "[Client_"<< myrank <<"]: client set error handler"<< endl;
-    MPI_Comm_set_errhandler(sc_comm_,eh);
+    //cout << "[Client_"<< myrank <<"]: client set error handler"<< endl;
+    //MPI_Comm_set_errhandler(sc_comm_,eh);
 
     pthread_create(&recv_t, NULL, MPI_Base::recv_thread, this);
     while(true){
@@ -97,7 +111,7 @@ int MPI_Client::stop() {
 int MPI_Client::finalize() {
     int ret;
     ret = pthread_join(recv_t, NULL);
-    MPI_Errhandler_free(&eh);
+    //MPI_Errhandler_free(&eh);
     cout <<"[Client_"<< myrank <<"]: recv thread stop, exit code=" << ret << endl;
     MPI_Finalize();
     return 0;
