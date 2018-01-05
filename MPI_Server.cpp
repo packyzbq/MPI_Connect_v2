@@ -8,7 +8,7 @@
 #include <string>
 #include <signal.h>
 
-#define DEBUG
+//#define DEBUG
 
 MPI_Server::MPI_Server(IRecv_buffer* rh, char *svc_name) : MPI_Base(rh) {
     svc_name_ = svc_name;

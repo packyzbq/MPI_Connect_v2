@@ -5,7 +5,7 @@
 #include "Include/MPI_Client.h"
 #include <string.h>
 
-#define DEBUG
+//#define DEBUG
 
 MPI_Client::MPI_Client(IRecv_buffer *mh, char *svc_name, char *uuid):MPI_Base(mh),svc_name_(svc_name),uuid_(uuid) {
     recv_flag_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -29,8 +29,9 @@ int MPI_Client::initialize() {
     cout << "[Client_"<< myrank <<"]: support thread level= " << provide << endl;
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
     //MPI_Comm_create_errhandler(MPI_Client::errhandler, &eh);
-
+    int attemp = 0;
     while(!port_f) {
+		attemp+=1;
         cout << "[Client_" << myrank << "]: finding service name <" << svc_name_ << "> ..." << endl;
         merr = MPI_Lookup_name(svc_name_, MPI_INFO_NULL, portname);
         if (merr) {
@@ -47,11 +48,17 @@ int MPI_Client::initialize() {
             portname[port_len-1] = '\0';
             port_len-=1;
         }
-        if (port_len < 24)
+        if (port_len < 24 && attemp <= 5)
             continue;
         else
             port_f = true;
     }
+
+	//check portname format
+	if(strlen(portname) < 24 || portname[strlen(portname)-1] != '$'){
+		cout << "[Client_" << myrank << "]: server port error:<" << portname << ">; exit" << endl;
+		return MPI_ERR_CODE::LOOKUP_SVC_ERR;
+	}
 
     merr = MPI_Comm_connect(portname, MPI_INFO_NULL,0, MPI_COMM_SELF, &sc_comm_);
     if(merr){
