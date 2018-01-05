@@ -28,13 +28,36 @@ int MPI_Client::initialize() {
     cout << "[Client_"<< myrank <<"]: support thread level= " << provide << endl;
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
-    cout << "[Client_"<< myrank <<"]: finding service name <" << svc_name_ << "> ..." <<endl;
-    merr = MPI_Lookup_name(svc_name_, MPI_INFO_NULL, portname);
-    if(merr){
-        MPI_Error_string(merr, errmsg, &msglen);
-        cout << "[Client-"<<myrank<<"-error]: Lookup service name error, msg: "<< errmsg << endl;
+    bool port_f = false;
+    int attemp = 0;
+    while(!port_f) {
+        attemp+=1;
+        cout << "[Client_" << myrank << "]: finding service name <" << svc_name_ << "> ..." << endl;
+        merr = MPI_Lookup_name(svc_name_, MPI_INFO_NULL, portname);
+        if (merr) {
+            MPI_Error_string(merr, errmsg, &msglen);
+            cout << "[Client-" << myrank << "-error]: Lookup service name error, msg: " << errmsg << endl;
+            return MPI_ERR_CODE::LOOKUP_SVC_ERR;
+            //TODO Add error handle
+        }
+
+        cout << "[Client_" << myrank << "]: service found on port:<" << portname << ">" << endl;
+        // check port is in right format
+        int port_len = strlen(portname);
+        while(portname[port_len-1] != '$'){
+            portname[port_len-1] = '\0';
+            port_len-=1;
+        }
+        if (port_len < 24 && attemp <= 5)
+            continue;
+        else
+            port_f = true;
+    }
+
+    //check portname format
+    if(strlen(portname) < 24 || portname[strlen(portname)-1] != '$'){
+        cout << "[Client_" << myrank << "]: server port error:<" << portname << ">; exit" << endl;
         return MPI_ERR_CODE::LOOKUP_SVC_ERR;
-        //TODO Add error handle
     }
 
     cout << "[Client_"<< myrank <<"]: service found on port:<" << portname << ">" << endl;
