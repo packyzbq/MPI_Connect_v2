@@ -5,7 +5,7 @@
 #ifndef MPI_CONNECT_V2_IRECV_BUFFER_H
 #define MPI_CONNECT_V2_IRECV_BUFFER_H
 
-#define DEBUG
+//#define DEBUG
 
 #include <string>
 #include <pthread.h>

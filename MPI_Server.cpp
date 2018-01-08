@@ -295,6 +295,7 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
                 if(iter->second == args.newcomm && comm_map[uuid] == NULL) {
                     comm_map[uuid] = iter->second;
                     comm_map.erase(iter->first);
+
 #ifdef DEBUG
                     cout << "[Server]: register worker " << uuid << " success" << endl;
 #endif
@@ -305,11 +306,13 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
             	}
 
             }
+
             if(iter == comm_map.end()){
                 cout << "[Server-Error]: register error, no compatible MPI_COMM" << endl;
                 //TODO Add error handle
             }
             pthread_mutex_unlock(&comm_list_mutex);
+		    //print_Commlist();
         }
             break;
         case MPI_DISCONNECT:{
@@ -331,7 +334,7 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
                     MPI_Barrier(comm_map[uuid]);
                     comm_map.erase(uuid);
 #ifdef DEBUG
-                    cout << "[Server]: find MPI_Comm and wid, removing worker..." << endl;
+                    cout << "[Server]: find MPI_Comm and wid, removing worker..., commlist size = " << comm_map.size() << endl;
 #endif
                 }
                 else{

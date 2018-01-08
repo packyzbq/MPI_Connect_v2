@@ -16,8 +16,9 @@ public:
 
     int initialize();
     //void run();
-    int stop();
+    int stop(bool flag);
     int finalize();
+    int exit();
 
     bool new_msg_come(ARGS *args);
 //    void send(void *buf, int msgsize, int dest, MPI_Datatype datatype, int tag, MPI_Comm comm);

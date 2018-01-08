@@ -12,8 +12,9 @@ MPI_Client::MPI_Client(IRecv_buffer *mh, char *svc_name, char *uuid):MPI_Base(mh
 }
 
 MPI_Client::~MPI_Client() {
-    if(!recv_f)
-        stop();
+    stop(recv_f);
+    //if(!recv_f)
+    //    stop();
 }
 
 int MPI_Client::initialize() {
@@ -90,8 +91,11 @@ int MPI_Client::initialize() {
     return MPI_ERR_CODE::SUCCESS;
 }
 
-int MPI_Client::stop() {
+int MPI_Client::stop(bool flag) {
     cout << "--------------------stop Client "<< myrank<<"--------------------" << endl;
+	if(flag)
+		MPI_Finalize();
+	else{
     //cout << "[Client_"<< myrank <<"]: stop Client..." << endl;
     int merr= 0;
     int msglen = 0;
@@ -111,13 +115,15 @@ int MPI_Client::stop() {
     MPI_Barrier(sc_comm_);
     cout << "[Client_"<< myrank <<"]: disconnected..." << endl;
     finalize();
+	}
     cout << "--------------------Client "<< myrank <<" stop finish--------------------" << endl;
     return MPI_ERR_CODE::SUCCESS;
 }
 
 int MPI_Client::finalize() {
     int ret;
-    ret = pthread_join(recv_t, NULL);
+    if(recv_t)
+        ret = pthread_join(recv_t, NULL);
     //MPI_Errhandler_free(&eh);
     cout <<"[Client_"<< myrank <<"]: recv thread stop, exit code=" << ret << endl;
     MPI_Finalize();
@@ -212,6 +218,11 @@ void MPI_Client::recv_handle(ARGS args, void *buf) {
             //cout << "[Client-Error]: Unrecognized type" << endl;
             break;
     }
+}
+
+int MPI_Client::exit(){
+	MPI_Finalize();
+	return 0;
 }
 
 void MPI_Client::errhandler(MPI_Comm *comm, int *errcode,...) {
