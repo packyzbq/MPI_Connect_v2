@@ -9,10 +9,11 @@
 
 MPI_Client::MPI_Client(IRecv_buffer *mh, char *svc_name, char *uuid):MPI_Base(mh),svc_name_(svc_name),uuid_(uuid) {
     recv_flag_mutex = PTHREAD_MUTEX_INITIALIZER;
+	//strcpy(portname,port);
 }
 
 MPI_Client::~MPI_Client() {
-    stop(recv_f);
+    //stop(recv_f);
     //if(!recv_f)
     //    stop();
 }
@@ -27,6 +28,7 @@ int MPI_Client::initialize() {
 
     int provide;
     MPI_Init_thread(0,0, MPI_THREAD_MULTIPLE, &provide);
+	MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
     cout << "[Client_"<< myrank <<"]: support thread level= " << provide << endl;
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
     //MPI_Comm_create_errhandler(MPI_Client::errhandler, &eh);
@@ -35,14 +37,17 @@ int MPI_Client::initialize() {
 		attemp+=1;
         cout << "[Client_" << myrank << "]: finding service name <" << svc_name_ << "> ..." << endl;
         merr = MPI_Lookup_name(svc_name_, MPI_INFO_NULL, portname);
+		cout << "port = " << portname << endl;
         if (merr) {
             MPI_Error_string(merr, errmsg, &msglen);
             cout << "[Client-" << myrank << "-error]: Lookup service name error, msg: " << errmsg << endl;
-            return MPI_ERR_CODE::LOOKUP_SVC_ERR;
+			if(attemp < 10)
+            	continue;
+			else
+				return MPI_ERR_CODE::LOOKUP_SVC_ERR;
             //TODO Add error handle
         }
 
-        cout << "[Client_" << myrank << "]: service found on port:<" << portname << ">" << endl;
         // check port is in right format
         int port_len = strlen(portname);
         while(portname[port_len-1] != '$'){
@@ -54,7 +59,7 @@ int MPI_Client::initialize() {
         else
             port_f = true;
     }
-
+    cout << "[Client_" << myrank << "]: service found on port:<" << portname << ">" << endl;
 	//check portname format
 	if(strlen(portname) < 24 || portname[strlen(portname)-1] != '$'){
 		cout << "[Client_" << myrank << "]: server port error:<" << portname << ">; exit" << endl;
@@ -85,7 +90,7 @@ int MPI_Client::initialize() {
 		pthread_mutex_unlock(&recv_flag_mutex);
 	}
     cout << "[Client_"<< myrank <<"]: recv thread start...." << endl;
-    cout << "--------------------Client "<< myrank <<" finish--------------------" << endl;
+    cout << "--------------------Client "<< myrank <<" init finish--------------------" << endl;
 
 
     return MPI_ERR_CODE::SUCCESS;
