@@ -19,6 +19,7 @@ private:
     char port[MPI_MAX_PORT_NAME];
 
 	MPI_Errhandler eh;
+    char port_file[1024];
 
     pthread_t pth_accept;
     pthread_mutex_t accept_flag_mutex;

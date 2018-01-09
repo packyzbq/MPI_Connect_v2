@@ -4,6 +4,7 @@
 
 #include "Include/MPI_Client.h"
 #include <string.h>
+#include <fstream>
 
 //#define DEBUG
 
@@ -42,6 +43,18 @@ int MPI_Client::initialize() {
     cout << "[Client_"<< myrank <<"]: support thread level= " << provide << endl;
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
     //MPI_Comm_create_errhandler(MPI_Client::errhandler, &eh);
+    // read port from file
+
+    ifstream in("port.txt");
+    if(in.is_open()) {
+        in.getline(portname, MPI_MAX_PORT_NAME);
+        in.close();
+        port_f = true;
+    }
+    else{
+        cout << "[Client-Error] Open port file error, lookup for server port" << endl;
+    }
+
     int attemp = 0;
     while(!port_f) {
 		attemp+=1;

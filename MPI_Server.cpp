@@ -4,9 +4,11 @@
 
 #include "Include/MPI_Server.h"
 #include "Include/ErrorHandler.h"
+#include <fstream>
 #include "map"
 #include <string>
 #include <signal.h>
+#include <io.h>
 
 //#define DEBUG
 
@@ -16,6 +18,8 @@ MPI_Server::MPI_Server(IRecv_buffer* rh, char *svc_name) : MPI_Base(rh) {
     accept_flag_mutex = PTHREAD_MUTEX_INITIALIZER;
     comm_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 	dummy_f_mutex = PTHREAD_MUTEX_INITIALIZER;
+    getcwd(port_file,1024);
+    sprintf(port_file,"%s/port.txt",port_file);
 };
 
 MPI_Server::~MPI_Server() {
@@ -47,6 +51,20 @@ int MPI_Server::initialize() {
     }
 
     cout << "[Server]: Host: " << hostname << ",Proc: "<< myrank << ",Server opening port on <" << port <<">" << endl;
+    // write port into files
+#ifdef DEBUG
+    cout << "[Server]: Open file " << port_file <<" , write port : " << port << endl;
+#endif
+
+    ofstream out(port_file);
+    if(out.is_open()) {
+        out << port;
+        out.close();
+        cout << "[Server]: Write port into file finished" << endl;
+    }
+    else{
+        cout << "[Server-Error]: Write port error" << endl;
+    }
 
     merr = MPI_Publish_name(svc_name_, MPI_INFO_NULL, port);
     if(merr){
@@ -110,6 +128,11 @@ int MPI_Server::stop() {
         //TODO Do something for finalize error
         return MPI_ERR_CODE::JOIN_THREAD_ERROR;
     }
+
+    //delete port file
+    if(remove(port_file) != 0)
+        cout << "[Server-Error]: Remove port tmp file fail" << endl;
+
     cout << "--------------------Server stop finish--------------------"  << endl;
 
     return MPI_ERR_CODE::SUCCESS;
