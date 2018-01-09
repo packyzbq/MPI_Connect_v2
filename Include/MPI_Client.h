@@ -12,6 +12,7 @@
 class MPI_Client : public MPI_Base{
 public:
     MPI_Client(IRecv_buffer* mh, char* svc_name, char* uuid);
+    MPI_Client(IRecv_buffer* mh, char* svc_name, char* uuid, char* port);
     ~MPI_Client();
 
     int initialize();
@@ -29,12 +30,14 @@ public:
 
 private:
     char* svc_name_;
-    char portname[MPI_MAX_PORT_NAME];
+    char portname[MPI_MAX_PORT_NAME] = "\0";
 
 	MPI_Errhandler eh;
 
     MPI_Comm sc_comm_;
     string uuid_= "";
+
+    bool port_f = false;
 };
 
 #endif //MPI_CONNECT_MPI_CLIENT_H

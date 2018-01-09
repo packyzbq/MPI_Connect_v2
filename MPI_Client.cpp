@@ -12,6 +12,17 @@ MPI_Client::MPI_Client(IRecv_buffer *mh, char *svc_name, char *uuid):MPI_Base(mh
 	//strcpy(portname,port);
 }
 
+MPI_Client::MPI_Client(IRecv_buffer *mh, char *svc_name, char *uuid, char *port): MPI_Base(mh),svc_name_(svc_name),uuid_(uuid){
+    recv_flag_mutex = PTHREAD_MUTEX_INITIALIZER;
+    //check if port is right
+    if(strlen(port) > 24 && port[strlen(port)-1] == '$'){
+        strcpy(portname,port);
+        port_f = true;
+    }
+
+
+}
+
 MPI_Client::~MPI_Client() {
     //stop(recv_f);
     //if(!recv_f)
@@ -24,7 +35,6 @@ int MPI_Client::initialize() {
     int merr= 0;
     int msglen = 0;
     char errmsg[MPI_MAX_ERROR_STRING];
-    bool port_f = false;
 
     int provide;
     MPI_Init_thread(0,0, MPI_THREAD_MULTIPLE, &provide);
@@ -127,8 +137,7 @@ int MPI_Client::stop(bool flag) {
 
 int MPI_Client::finalize() {
     int ret;
-    if(recv_t)
-        ret = pthread_join(recv_t, NULL);
+    ret = pthread_join(recv_t, NULL);
     //MPI_Errhandler_free(&eh);
     cout <<"[Client_"<< myrank <<"]: recv thread stop, exit code=" << ret << endl;
     MPI_Finalize();
