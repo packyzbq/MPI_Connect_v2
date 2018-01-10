@@ -33,7 +33,7 @@ struct IRecv_buffer{
 
 	int size(){
 		return buffer.size();
-	}
+	};
 
     void put(Pack p){
         pthread_mutex_lock(&mutex);

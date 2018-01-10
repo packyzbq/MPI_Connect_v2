@@ -4,8 +4,12 @@
 
 #include "Include/MPI_Server.h"
 #include "Include/ErrorHandler.h"
+#include <fstream>
+#include "map"
 #include <string>
 #include <signal.h>
+#include <sys/dir.h>
+#include <unistd.h>
 
 //#define DEBUG
 
@@ -36,6 +40,7 @@ int MPI_Server::initialize() {
     MPI_Get_processor_name(hostname, &msglen);
     //TODO set self costume handler, here set MPI_ERRORS_RETURN in temp
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    //MPI_Comm_create_errhandler(MPI_Server::errhandler, &eh);
     cout << "[Server]: Host: " << hostname << ",Proc: "<< myrank << ", Server initialize..." << endl;
     merr = MPI_Open_port(MPI_INFO_NULL, port);
     if(merr){
@@ -45,6 +50,23 @@ int MPI_Server::initialize() {
     }
 
     cout << "[Server]: Host: " << hostname << ",Proc: "<< myrank << ",Server opening port on <" << port <<">" << endl;
+    // write port into files
+#ifdef DEBUG
+    cout << "[Server]: Open file " << port_file <<" , write port : " << port << endl;
+#endif
+    if(strlen(port_file) <= 1){
+        getcwd(port_file,1024);
+        sprintf(port_file,"%s/port.txt",port_file);
+	}
+    ofstream out(port_file);
+    if(out.is_open()) {
+        out << port;
+        out.close();
+        cout << "[Server]: Write port into file finished, path = " << port_file <<  endl;
+    }
+    else{
+        cout << "[Server-Error]: Write port error" << endl;
+    }
 
     merr = MPI_Publish_name(svc_name_, MPI_INFO_NULL, port);
     if(merr){
@@ -97,7 +119,9 @@ int MPI_Server::stop() {
 
     if(!comm_map.empty()){
         cout <<"[Server]: client still working ,cannot stop server..." << endl;
-        return MPI_ERR_CODE::STOP_ERR;
+		cout << "[Server]: Running client:" << endl;
+		print_Commlist();
+        //return MPI_ERR_CODE::STOP_ERR;
     }
     // TODO Add force stop
     //stop threads
@@ -106,6 +130,11 @@ int MPI_Server::stop() {
         //TODO Do something for finalize error
         return MPI_ERR_CODE::JOIN_THREAD_ERROR;
     }
+
+    //delete port file
+    if(remove(port_file) != 0)
+        cout << "[Server-Error]: Remove port tmp file fail" << endl;
+
     cout << "--------------------Server stop finish--------------------"  << endl;
 
     return MPI_ERR_CODE::SUCCESS;
@@ -157,6 +186,7 @@ int MPI_Server::finalize() {
         //TODO Do something
         return MPI_ERR_CODE::JOIN_THREAD_ERROR;
     }
+    //MPI_Errhandler_free(&eh);
     MPI_Finalize();
     return MPI_ERR_CODE::SUCCESS;
 }
@@ -245,11 +275,14 @@ void* MPI_Server::accept_conn_thread(void *ptr) {
 		//cout << "comm = " << newcomm << endl;
 		tmpkey++;
         pthread_mutex_unlock(&(((MPI_Server*)ptr)->comm_list_mutex));
-        //TODO receive worker MPI_REGISTEY tags and add to master, in recv_thread() function or ABC recv_commit() function
+        //add comm errhandler
+        //MPI_Comm_set_errhandler(newcomm,(MPI_Errhandler)&eh);
+
+
 #ifdef DEBUG
         cout << "[Server]:Host: " << ((MPI_Server*)ptr)->hostname << ", Proc: "<< ((MPI_Server*)ptr)->myrank << ", receive new connection...; MPI_COMM="<< newcomm << endl;
 #endif
-        //TODO add to bcast_comm/group
+
 
     }
     cout << "[Server] host: "<< ((MPI_Server*)ptr)->hostname << ", accept connection thread stop..." << endl;
@@ -277,16 +310,17 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
             int size = 0;
             pthread_mutex_lock(&comm_list_mutex);
             //modify comm_map
-            size_t pos = msg.find("\"uuid\":");
+			size_t pos = msg.find("\"uuid\":");
 			string uuid = "";
 			if(pos != -1)
             	uuid = msg.substr(pos+9,36);
 			else
-			    uuid = msg;
+				uuid = msg;
             for(iter = comm_map.begin(); iter != comm_map.end(); iter++){
                 if(iter->second == args.newcomm && comm_map[uuid] == NULL) {
                     comm_map[uuid] = iter->second;
                     comm_map.erase(iter->first);
+
 #ifdef DEBUG
                     cout << "[Server]: register worker " << uuid << " success" << endl;
 #endif
@@ -297,11 +331,13 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
             	}
 
             }
+
             if(iter == comm_map.end()){
                 cout << "[Server-Error]: register error, no compatible MPI_COMM" << endl;
                 //TODO Add error handle
             }
             pthread_mutex_unlock(&comm_list_mutex);
+		    //print_Commlist();
         }
             break;
         case MPI_DISCONNECT:{
@@ -310,7 +346,7 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
 			if(pos != -1)
             	uuid = msg.substr(pos+9,36);
 			else
-			    uuid = msg;
+				uuid = msg;
             cout << "[Server] worker :" << uuid<< " require disconnect" << endl;
             pthread_mutex_lock(&comm_list_mutex);
             if(comm_map[uuid] != NULL){
@@ -323,7 +359,7 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
                     MPI_Barrier(comm_map[uuid]);
                     comm_map.erase(uuid);
 #ifdef DEBUG
-                    cout << "[Server]: find MPI_Comm and wid, removing worker..." << endl;
+                    cout << "[Server]: find MPI_Comm and wid, removing worker..., commlist size = " << comm_map.size() << endl;
 #endif
                 }
                 else{
@@ -351,6 +387,7 @@ void MPI_Server::recv_handle(ARGS args, void* buf) {
 }
 
 int MPI_Server::send_string(char *buf, int msgsize, string dest_uuid, int tag) {
+    double starttime,endtime;
 #ifdef DEBUG
     cout << "[Server]: send message...<" << buf << ",msgsize="<< msgsize <<",dest="<<dest_uuid <<",tag=" <<tag  << ">"<< endl;
 #endif
@@ -365,7 +402,9 @@ int MPI_Server::send_string(char *buf, int msgsize, string dest_uuid, int tag) {
         //TODO add error handler
 		return MPI_ERR_CODE::SEND_FAIL;
     }
+    starttime = MPI_Wtime();
     merr = MPI_Send(buf, msgsize, MPI_CHAR, 0, tag, send_comm);
+    endtime = MPI_Wtime();
     if(merr){
         MPI_Error_string(merr, errmsg, &msglen);
         cout << "[Server-Error]: send fail...error: " << errmsg << endl;
@@ -384,4 +423,23 @@ int MPI_Server::send_string(char *buf, int msgsize, string dest_uuid, int tag) {
     cout << "[Server]: end barrier..." << endl;
 #endif
     return MPI_ERR_CODE::SUCCESS;
+}
+
+void MPI_Server::errhandler(MPI_Comm *comm, int *errcode, ...) {
+    int reslen;
+    char errstr[MPI_MAX_ERROR_STRING];
+    if(*errcode != MPI_ERR_OTHER) {
+        MPI_Error_string(*errcode, errstr, &reslen);
+        Pack pack = Pack(-1, 0);
+        string st = "";
+        for(map<string, MPI_Comm>::iterator i = comm_map.begin(); i != comm_map.end();i++){
+            if(i->second == *comm) {
+                st += i->first;
+                break;
+            }
+        }
+        st =st+ " "+ errstr;
+        pack.sbuf_=st;
+        rv_buf->put(pack);
+    }
 }

@@ -9,6 +9,7 @@
 #include "MPI_Util.h"
 #include <list>
 #include <map>
+#include <string.h>
 
 
 class MPI_Server : public MPI_Base{
@@ -17,6 +18,9 @@ private:
     map<string ,MPI_Comm> comm_map;
     pthread_mutex_t comm_list_mutex;
     char port[MPI_MAX_PORT_NAME];
+
+	MPI_Errhandler eh;
+    char port_file[1024];
 
     pthread_t pth_accept;
     pthread_mutex_t accept_flag_mutex;
@@ -41,6 +45,7 @@ public:
     void recv_handle(ARGS args, void* buf);
 
     int send_string(char *buf, int msgsize, string dest_uuid, int tag);
+    void errhandler(MPI_Comm *comm, int* errcode,...);
     //int send_int(int buf, int msgsize, string dest_uuid, int tag);
     static void* accept_conn_thread(void* ptr);
 
@@ -65,6 +70,10 @@ public:
         }
         pthread_mutex_unlock(&comm_list_mutex);
     };
+	
+	void set_portfile(char* port_path){
+		strcpy(port_file, port_path);
+	};
 };
 
 #endif //MPI_CONNECT_MPI_SERVER_H
