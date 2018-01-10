@@ -45,7 +45,12 @@ int MPI_Client::initialize() {
     //MPI_Comm_create_errhandler(MPI_Client::errhandler, &eh);
     // read port from file
 
-    ifstream in("port.txt");
+    ifstream in;
+	if(strlen(portfile) <= 1){
+		strcpy(portfile,"port.txt");	
+	}
+    cout << "[Client] Find port file in path = " << portfile << endl; 
+	in.open(portfile,ios::in);
     if(in.is_open()) {
         in.getline(portname, MPI_MAX_PORT_NAME);
         in.close();

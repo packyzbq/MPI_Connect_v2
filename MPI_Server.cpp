@@ -8,7 +8,8 @@
 #include "map"
 #include <string>
 #include <signal.h>
-#include <io.h>
+#include <sys/dir.h>
+#include <unistd.h>
 
 //#define DEBUG
 
@@ -18,8 +19,6 @@ MPI_Server::MPI_Server(IRecv_buffer* rh, char *svc_name) : MPI_Base(rh) {
     accept_flag_mutex = PTHREAD_MUTEX_INITIALIZER;
     comm_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 	dummy_f_mutex = PTHREAD_MUTEX_INITIALIZER;
-    getcwd(port_file,1024);
-    sprintf(port_file,"%s/port.txt",port_file);
 };
 
 MPI_Server::~MPI_Server() {
@@ -55,12 +54,15 @@ int MPI_Server::initialize() {
 #ifdef DEBUG
     cout << "[Server]: Open file " << port_file <<" , write port : " << port << endl;
 #endif
-
+    if(strlen(port_file) <= 1){
+        getcwd(port_file,1024);
+        sprintf(port_file,"%s/port.txt",port_file);
+	}
     ofstream out(port_file);
     if(out.is_open()) {
         out << port;
         out.close();
-        cout << "[Server]: Write port into file finished" << endl;
+        cout << "[Server]: Write port into file finished, path = " << port_file <<  endl;
     }
     else{
         cout << "[Server-Error]: Write port error" << endl;

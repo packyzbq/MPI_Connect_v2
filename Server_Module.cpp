@@ -23,6 +23,7 @@ BOOST_PYTHON_MODULE(Server_Module)
                 .def("get_Commlist_size", &MPI_Server::get_Commlist_size)
                 .def("get_stop_permit",&MPI_Server::get_stop_permit)
                 .def("print_Commlist", &MPI_Server::print_Commlist)
+				.def("set_portfile", &MPI_Server::set_portfile)
                 ;
 
 }

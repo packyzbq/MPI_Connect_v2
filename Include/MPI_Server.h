@@ -9,6 +9,7 @@
 #include "MPI_Util.h"
 #include <list>
 #include <map>
+#include <string.h>
 
 
 class MPI_Server : public MPI_Base{
@@ -69,6 +70,10 @@ public:
         }
         pthread_mutex_unlock(&comm_list_mutex);
     };
+	
+	void set_portfile(char* port_path){
+		strcpy(port_file, port_path);
+	};
 };
 
 #endif //MPI_CONNECT_MPI_SERVER_H

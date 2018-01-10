@@ -8,6 +8,7 @@
 #include "MPI_Base.h"
 #include "ErrorHandler.h"
 #include "MPI_Util.h"
+#include <string.h>
 
 class MPI_Client : public MPI_Base{
 public:
@@ -27,10 +28,14 @@ public:
     int send_string(char* buf, int msgsize, int dest, int tag);
     void recv_handle(ARGS args,void* buf);
     void errhandler(MPI_Comm *comm, int* errcode,...);
+	void set_portfile(char* port_path){
+		strcpy(portfile, port_path);
+	};
 
 private:
     char* svc_name_;
-    char portname[MPI_MAX_PORT_NAME] = "\0";
+    char portname[MPI_MAX_PORT_NAME];
+	char portfile[1024];
 
 	MPI_Errhandler eh;
 
